@@ -39,11 +39,11 @@ typedef struct {
 
 typedef struct {
   int code;
-  const buffer_t *msg;
+  char *msg;
 } LITEORM_Err;
 
 typedef struct {
-  const buffer_t *sql;
+  buffer_t *sql;
   void (*bind_fn)(sqlite3_stmt *statement, int *bind_index, void *user_ctx);
   void *user_ctx;
 } LITEORM_Where;

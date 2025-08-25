@@ -3,11 +3,31 @@
 #include <describe/describe.c>
 
 #include <buffer/buffer.c>
+#include <dotenv-c/dotenv.c>
+#include <stdlib.h>
 #include <vec/vec.c>
 
-#include "../src/liteorm.h"
+#include "../src/liteorm.c"
 
 int main() {
+
+  int envLoadReturnCode = env_load(".env", true);
+  if (envLoadReturnCode == -1) {
+    printf("WARNING: Unable to load .env file. Ignore if you are not using the "
+           ".env\n");
+  }
+
+  char *databaseName = getenv("LITEORM_DB");
+  if (!databaseName) {
+    printf("ERROR: Please define LITEORM_DB in the .env file or in the ENV "
+           "Vars\n");
+    return -1;
+  }
+  printf("\nTest Database Handle: %s\n", databaseName);
+
+  sqlite3 *databaseHandle;
+
+  int databaseConnectReturnCode = sqlite3_open(databaseName, &databaseHandle);
 
   LITEORM_Field one;
   LITEORM_Field two;
@@ -52,9 +72,18 @@ int main() {
       assert_equal(model.fields.data[1].type, LITEORM_TEXT);
     }
 
+    it("should create a new table") {
+      LITEORM_Err createTableErrorCode =
+          liteorm_create_table(databaseHandle, &model);
+
+      assert_equal(createTableErrorCode.code, 0);
+    }
+
     buffer_free(one.name);
     buffer_free(two.name);
     buffer_free(model.table);
     vec_deinit(&model.fields);
+
+    sqlite3_close(databaseHandle);
   }
 }

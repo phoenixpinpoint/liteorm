@@ -1,5 +1,10 @@
 test:
-	mkdir tests/bin/; gcc ./tests/test.c -o ./tests/bin/test -Ideps -lsqlite3; ./tests/bin/test
+	mkdir tests/bin/; cd tests/bin; touch .env; echo "LITEORM_DB=test.db" >> .env;
+	gcc -g ./tests/test.c -o ./tests/bin/test -Ideps -lsqlite3; cd tests/bin; ./test
+
+leak_test:
+	mkdir tests/bin/; cd tests/bin; touch .env; echo "LITEORM_DB=test.db" >> .env;
+	gcc -g ./tests/test.c -o ./tests/bin/test -Ideps -lsqlite3; cd tests/bin; valgrind --leak-check=full ./test
 
 clean:
 	rm -rf ./bin
