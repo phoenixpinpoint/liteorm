@@ -53,3 +53,13 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Clibs
+deps
+
+# Editor Specific Stuff
+.clangd
+
+# Binaries 
+/bin
+/tests/bin
