@@ -38,9 +38,9 @@ const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model) {
 LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
                                  const LITEORM_Model *model) {
   buffer_t *sqlQueryBuffer = buffer_new();
-  buffer_append(sqlQueryBuffer, "CREATE TABLE IF NOT EXISTS ");
+  buffer_append(sqlQueryBuffer, "CREATE TABLE IF NOT EXISTS `");
   buffer_append(sqlQueryBuffer, model->table->data);
-  buffer_append(sqlQueryBuffer, " (");
+  buffer_append(sqlQueryBuffer, "` (");
   for (int i = 0; i < model->field_count; i++) {
     const LITEORM_Field *field = &model->fields.data[i];
     buffer_append(sqlQueryBuffer, field->name->data);
@@ -67,5 +67,22 @@ LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
   if (errorMessage) {
     sqlite3_free(errorMessage);
   }
+  return returnCode == SQLITE_OK ? LITEORM_OK : error;
+}
+
+LITEORM_Err liteorm_drop_table(sqlite3 *databaseHandle,
+                               const LITEORM_Model *model) {
+  buffer_t *sqlQueryBuffer = buffer_new_with_copy("DROP TABLE IF EXISTS `");
+  buffer_append(sqlQueryBuffer, model->table->data);
+  buffer_append(sqlQueryBuffer, "`;");
+
+  char *errorMessage = NULL;
+  int returnCode = sqlite3_exec(databaseHandle, sqlQueryBuffer->data, NULL,
+                                NULL, &errorMessage);
+
+  buffer_free(sqlQueryBuffer);
+
+  LITEORM_Err error = {returnCode, errorMessage};
+
   return returnCode == SQLITE_OK ? LITEORM_OK : error;
 }

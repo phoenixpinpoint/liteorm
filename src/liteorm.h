@@ -75,6 +75,9 @@ LITEORM_Err liteorm_select_where(sqlite3 *databaseHandle, LITEORM_Model *model,
                                  const LITEORM_Where *wherequery,
                                  liteorm_row_callback callback, void *user_ctx);
 
+LITEORM_Err liteorm_drop_table(sqlite3 *datbaseHandle,
+                               const LITEORM_Model *model);
+
 const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model);
 
 #endif

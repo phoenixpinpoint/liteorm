@@ -1,2 +1,3 @@
 # liteorm
-LiteORM is a simple SQLite ORM for C. 
+
+LiteORM is a simple SQLite ORM for C.

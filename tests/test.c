@@ -8,6 +8,7 @@
 #include <vec/vec.c>
 
 #include "../src/liteorm.c"
+#include "buffer/buffer.h"
 
 int main() {
 
@@ -77,6 +78,32 @@ int main() {
           liteorm_create_table(databaseHandle, &model);
 
       assert_equal(createTableErrorCode.code, 0);
+    }
+
+    it("should drop a table") {
+      LITEORM_Err dropTableErrorCode =
+          liteorm_drop_table(databaseHandle, &model);
+
+      assert_equal(dropTableErrorCode.code, 0);
+
+      // TODO This handling sucks, we expect the user to know to free the
+      // message specifically not a huge fan. THIS NEEDS TO BE REFACTORED TO BE
+      // MORE PALLETABLE.
+      sqlite3_free(dropTableErrorCode.msg);
+    }
+
+    it("shouldn't error on a table that doesn't exists") {
+      LITEORM_Model invalidModel;
+      invalidModel.table = buffer_new_with_copy("invalid-table-name");
+
+      LITEORM_Err dropTableErrorCode =
+          liteorm_drop_table(databaseHandle, &invalidModel);
+
+      assert_equal(dropTableErrorCode.code, 0);
+
+      buffer_free(invalidModel.table);
+
+      sqlite3_free(dropTableErrorCode.msg);
     }
 
     buffer_free(one.name);
