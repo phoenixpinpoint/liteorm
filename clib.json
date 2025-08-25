@@ -1,6 +1,13 @@
 {
   "name": "liteorm",
   "version": "0.1.0",
+  "license": "GPL-2.0-only",
+  "description": "A SQLite ORM for Lazy C Developers.....me mostly.",
+  "repo": "phoenixpoint/liteorm",
+  "src": [
+    "src/liteorm.c",
+    "src/liteorm.h"
+  ],
   "dependencies": {
     "clibs/buffer": "0.4.0",
     "rxi/vec": "0.2.1",
