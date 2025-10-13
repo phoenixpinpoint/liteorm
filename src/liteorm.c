@@ -9,6 +9,36 @@ static inline void *field_pointer(const void *record,
   return (void *)((const unsigned char *)record + field->offset);
 }
 
+static void bind_one(sqlite3_stmt *statementHandle, int idx,
+                     const LITEORM_Field *field, const void *ptr) {
+  switch (field->type & 0xFF) {
+  case LITEORM_I32:
+    sqlite3_bind_int(statementHandle, idx, *(const int *)ptr);
+    break;
+  case LITEORM_I64:
+    sqlite3_bind_int64(statementHandle, idx, *(const long long *)ptr);
+    break;
+  case LITEORM_BOOL:
+    sqlite3_bind_int(statementHandle, idx, *(const int *)ptr != 0);
+    break;
+  case LITEORM_REAL:
+    sqlite3_bind_double(statementHandle, idx, *(const double *)ptr);
+    break;
+  case LITEORM_TEXT:
+    if (field->size > 0) {
+      sqlite3_bind_text(statementHandle, idx, (const char *)ptr, -1,
+                        SQLITE_TRANSIENT);
+    } else {
+      sqlite3_bind_text(statementHandle, idx, *(char *const *)ptr, -1,
+                        SQLITE_TRANSIENT);
+    }
+    break;
+  default:
+    sqlite3_bind_null(statementHandle, idx);
+    break;
+  }
+}
+
 static const char *sqlite_type(unsigned type) {
   switch (type & 0xFF) {
   case LITEORM_I32:
@@ -68,6 +98,45 @@ LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
     sqlite3_free(errorMessage);
   }
   return returnCode == SQLITE_OK ? LITEORM_OK : error;
+}
+
+// Need to fix offset or come up with better solution for the bind.
+LITEORM_Err liteorm_insert(sqlite3 *databaseHandle, const LITEORM_Model *model,
+                           void *record) {
+  buffer_t *sqlQueryBuffer = buffer_new();
+  buffer_appendf(sqlQueryBuffer, "INSERT INTO %s VALUES (", model->table->data);
+  for (int i = 0; i < model->field_count; i++) {
+    buffer_appendf(sqlQueryBuffer, "%s?", i ? "," : "");
+  }
+  buffer_append(sqlQueryBuffer, ");");
+
+  sqlite3_stmt *statementHandle = NULL;
+  int insertResultCode = sqlite3_prepare_v2(
+      databaseHandle, sqlQueryBuffer->data, -1, &statementHandle, NULL);
+  if (insertResultCode != SQLITE_OK) {
+    return (LITEORM_Err){insertResultCode, sqlite3_errmsg(databaseHandle)};
+  }
+
+  for (int i = 0; i < model->field_count; i++) {
+    // TODO Add error handling/warning
+    bind_one(statementHandle, i + 1, &model->fields.data[i],
+             field_pointer(record, &model->fields.data[i]));
+  }
+
+  insertResultCode = sqlite3_step(statementHandle);
+
+  sqlite3_finalize(statementHandle);
+  if (insertResultCode != SQLITE_DONE) {
+    return (LITEORM_Err){insertResultCode, sqlite3_errmsg(databaseHandle)};
+  }
+
+  const LITEORM_Field *primaryKey = liteorm_find_pk(model);
+  if (primaryKey && primaryKey->auto_inc) {
+    *(long long *)field_pointer(record, primaryKey) =
+        sqlite3_last_insert_rowid(databaseHandle);
+  }
+
+  return LITEORM_OK;
 }
 
 LITEORM_Err liteorm_drop_table(sqlite3 *databaseHandle,

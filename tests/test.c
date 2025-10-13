@@ -9,6 +9,7 @@
 
 #include "../src/liteorm.c"
 #include "buffer/buffer.h"
+#include "test_record.h"
 
 int main() {
 
@@ -35,10 +36,13 @@ int main() {
 
   LITEORM_Model model;
 
+  LITEORM_Test_Record test_insert = {0};
+
   describe("LiteORM") {
     it("should handle a valid field") {
       one.name = buffer_new_with_copy("id\0");
       one.type = LITEORM_I32;
+      one.offset = offsetof(LITEORM_Test_Record, id);
       one.is_pk = 1;
       one.auto_inc = 1;
 
@@ -51,6 +55,7 @@ int main() {
     it("should handle a second valid field") {
       two.name = buffer_new_with_copy("test\0");
       two.type = LITEORM_TEXT;
+      two.offset = offsetof(LITEORM_Test_Record, test);
       two.is_pk = 0;
       two.auto_inc = 0;
 
@@ -78,18 +83,7 @@ int main() {
           liteorm_create_table(databaseHandle, &model);
 
       assert_equal(createTableErrorCode.code, 0);
-    }
-
-    it("should drop a table") {
-      LITEORM_Err dropTableErrorCode =
-          liteorm_drop_table(databaseHandle, &model);
-
-      assert_equal(dropTableErrorCode.code, 0);
-
-      // TODO This handling sucks, we expect the user to know to free the
-      // message specifically not a huge fan. THIS NEEDS TO BE REFACTORED TO BE
-      // MORE PALLETABLE.
-      sqlite3_free(dropTableErrorCode.msg);
+      sqlite3_free(createTableErrorCode.msg);
     }
 
     it("shouldn't error on a table that doesn't exists") {
@@ -103,6 +97,40 @@ int main() {
 
       buffer_free(invalidModel.table);
 
+      sqlite3_free(dropTableErrorCode.msg);
+    }
+
+    it("should create a new record") {
+      test_insert.test = buffer_new_with_copy("This is a test");
+
+      assert_str_equal(test_insert.test->data, "This is a test");
+    }
+
+    // Currently working on the binding code, the offsets may causing an issue.
+    // Will need to run through gdb
+    it("should insert a new record") {
+
+      LITEORM_Err insertResultCode =
+          liteorm_insert(databaseHandle, &model, &test_insert);
+      assert_equal(insertResultCode.code, 0);
+    }
+
+    it("shouldn't insert a record with duplicate PRIMAY KEY") {}
+
+    it("should identify a primary key") {
+      const LITEORM_Field *primaryKey = liteorm_find_pk(&model);
+      assert_str_equal(primaryKey->name->data, "id");
+    }
+
+    it("should drop a table") {
+      LITEORM_Err dropTableErrorCode =
+          liteorm_drop_table(databaseHandle, &model);
+
+      assert_equal(dropTableErrorCode.code, 0);
+
+      // TODO This handling sucks, we expect the user to know to free the
+      // message specifically not a huge fan. THIS NEEDS TO BE REFACTORED TO BE
+      // MORE PALLETABLE.
       sqlite3_free(dropTableErrorCode.msg);
     }
 
