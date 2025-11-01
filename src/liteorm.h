@@ -32,7 +32,7 @@ typedef vec_t(LITEORM_Field) vec_liteorm_field_t;
 
 typedef struct {
   buffer_t *table;
-  vec_liteorm_field_t fields;
+  vec_void_t fields;
   int field_count;
   size_t struct_size;
 } LITEORM_Model;

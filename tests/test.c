@@ -68,14 +68,16 @@ int main() {
     it("should handle creating a model") {
       model.table = buffer_new_with_copy("test\0");
       vec_init(&model.fields);
-      vec_push(&model.fields, one);
-      vec_push(&model.fields, two);
+      vec_push(&model.fields, &one);
+      vec_push(&model.fields, &two);
       model.field_count = model.fields.length;
 
       assert_str_equal("test\0", model.table->data);
       assert_equal(model.field_count, 2);
-      assert_equal(model.fields.data[0].type, LITEORM_I32);
-      assert_equal(model.fields.data[1].type, LITEORM_TEXT);
+      LITEORM_Field *f1 = model.fields.data[0];
+      LITEORM_Field *f2 = model.fields.data[1];
+      assert_equal(f1->type, LITEORM_I32);
+      assert_equal(f2->type, LITEORM_TEXT);
     }
 
     it("should create a new table") {

@@ -23,8 +23,8 @@ static void bind_one(sqlite3_stmt *statementHandle, int idx,
     break;
   case LITEORM_REAL:
     sqlite3_bind_double(statementHandle, idx, *(const double *)ptr);
-    break;
-  case LITEORM_TEXT:
+      break;
+    case LITEORM_TEXT:
     if (field->size > 0) {
       sqlite3_bind_text(statementHandle, idx, (const char *)ptr, -1,
                         SQLITE_TRANSIENT);
@@ -58,8 +58,10 @@ static const char *sqlite_type(unsigned type) {
 
 const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model) {
   for (int i = 0; i < model->field_count; i++) {
-    if (model->fields.data[i].is_pk) {
-      return &model->fields.data[i];
+    LITEORM_Field *f = (LITEORM_Field*)model->fields.data[i];
+
+    if (f->is_pk) {
+      return f;
     }
   }
   return NULL;
@@ -72,7 +74,7 @@ LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
   buffer_append(sqlQueryBuffer, model->table->data);
   buffer_append(sqlQueryBuffer, "` (");
   for (int i = 0; i < model->field_count; i++) {
-    const LITEORM_Field *field = &model->fields.data[i];
+    const LITEORM_Field *field = model->fields.data[i];
     buffer_append(sqlQueryBuffer, field->name->data);
     buffer_append(sqlQueryBuffer, " ");
     buffer_append(sqlQueryBuffer, sqlite_type(field->type));
@@ -119,8 +121,8 @@ LITEORM_Err liteorm_insert(sqlite3 *databaseHandle, const LITEORM_Model *model,
 
   for (int i = 0; i < model->field_count; i++) {
     // TODO Add error handling/warning
-    bind_one(statementHandle, i + 1, &model->fields.data[i],
-             field_pointer(record, &model->fields.data[i]));
+    bind_one(statementHandle, i + 1, model->fields.data[i],
+             field_pointer(record, model->fields.data[i]));
   }
 
   insertResultCode = sqlite3_step(statementHandle);
