@@ -80,6 +80,14 @@ int main() {
       assert_equal(f2->type, LITEORM_TEXT);
     }
 
+    it("should add a field to a model") {
+      LITEORM_Field *f3 = liteorm_add_new_field(&model, "new_field", LITEORM_TEXT, offsetof(LITEORM_Test_Record, new_field), false, false);
+      assert_str_equal(f3->name->data, "new_field");
+      assert_equal(f3->type, LITEORM_TEXT);
+      assert_equal(f3->is_pk, 0);
+      assert_equal(f3->auto_inc, 0);
+    }
+
     it("should create a new table") {
       LITEORM_Err createTableErrorCode =
           liteorm_create_table(databaseHandle, &model);

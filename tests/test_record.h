@@ -7,6 +7,7 @@
 typedef struct {
   int64_t id;
   buffer_t *test;
+  buffer_t *new_field;
 } LITEORM_Test_Record;
 
 #endif

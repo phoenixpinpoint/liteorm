@@ -67,6 +67,27 @@ const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model) {
   return NULL;
 }
 
+LITEORM_Field *liteorm_add_new_field(LITEORM_Model *model, char* name, unsigned type, size_t offset, bool is_pk, bool auto_inc) {
+  //if(!model->fields) {
+  //  return -1;
+  //}
+
+  LITEORM_Field *field = malloc(sizeof(LITEORM_Field));
+  if (!field) {
+    return (LITEORM_Field*)-1;
+  }
+  field->name = buffer_new_with_copy(name);
+  field->type = type;
+  field->offset = offset;
+  field->is_pk = is_pk;
+  field->auto_inc = auto_inc;
+
+  vec_push(&model->fields, field);
+
+  return field;
+}
+
+
 LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
                                  const LITEORM_Model *model) {
   buffer_t *sqlQueryBuffer = buffer_new();

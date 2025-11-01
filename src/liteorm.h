@@ -50,13 +50,12 @@ typedef struct {
 
 typedef int (*liteorm_row_callback)(void *user_ctx, void *record);
 
-static void bind_one(sqlite3_stmt *statementHandle, int idx,
-                     const LITEORM_Field *field, const void *ptr);
-
 #define LITEORM_OK                                                             \
   (LITEORM_Err) { 0, NULL }
 
 const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model);
+
+LITEORM_Field *liteorm_add_new_field(LITEORM_Model *model, char* name, unsigned type, size_t offset, bool is_pk, bool auto_inc);
 
 LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
                                  const LITEORM_Model *model);
@@ -82,7 +81,5 @@ LITEORM_Err liteorm_select_where(sqlite3 *databaseHandle, LITEORM_Model *model,
 
 LITEORM_Err liteorm_drop_table(sqlite3 *datbaseHandle,
                                const LITEORM_Model *model);
-
-const LITEORM_Field *liteorm_find_pk(const LITEORM_Model *model);
 
 #endif
