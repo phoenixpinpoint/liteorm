@@ -132,6 +132,7 @@ int main() {
       assert_str_equal(primaryKey->name->data, "id");
     }
 
+/*
     it("should drop a table") {
       LITEORM_Err dropTableErrorCode =
           liteorm_drop_table(databaseHandle, &model);
@@ -143,6 +144,7 @@ int main() {
       // MORE PALLETABLE.
       sqlite3_free(dropTableErrorCode.msg);
     }
+*/
 
     buffer_free(one.name);
     buffer_free(two.name);

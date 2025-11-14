@@ -12,6 +12,7 @@
     "clibs/buffer": "0.4.0",
     "rxi/vec": "0.2.1",
     "stephenmathieson/describe.h": "2.1.2",
-    "Isty001/dotenv-c": "0.1.0"
+    "Isty001/dotenv-c": "0.1.0",
+    "phoenixpinpoint/buffer-utils": "0.1.0"
   }
 }

@@ -127,24 +127,70 @@ LITEORM_Err liteorm_create_table(sqlite3 *databaseHandle,
 LITEORM_Err liteorm_insert(sqlite3 *databaseHandle, const LITEORM_Model *model,
                            void *record) {
   buffer_t *sqlQueryBuffer = buffer_new();
-  buffer_appendf(sqlQueryBuffer, "INSERT INTO %s VALUES (", model->table->data);
-  for (int i = 0; i < model->field_count; i++) {
-    buffer_appendf(sqlQueryBuffer, "%s?", i ? "," : "");
-  }
-  buffer_append(sqlQueryBuffer, ");");
-
+  buffer_t *fieldsToInsert = buffer_new();
+  buffer_t *valuePlaceholders = buffer_new();
   sqlite3_stmt *statementHandle = NULL;
+  
+
+  for (int i = 0; i < model->field_count; i++) {
+    LITEORM_Field *f = (LITEORM_Field *)model->fields.data[i];
+    //If fields are auto_inc ignore a 0 value. 
+    if(f->auto_inc == true) {
+      if(f->type == LITEORM_I32) {
+        int32_t* auto_inc_value = (int32_t*)field_pointer(record, f);
+        if(*auto_inc_value != 0){
+          buffer_append(fieldsToInsert, f->name->data);
+          buffer_append(valuePlaceholders, "?");
+          bind_one(statementHandle, i+1, model->fields.data[i], field_pointer(record, f));
+          if(i < model->field_count-1) {
+            buffer_append(valuePlaceholders, ",");
+            buffer_append(fieldsToInsert, ",");
+          }
+        }
+      } else if (f->type == LITEORM_I64) {
+        int64_t *auto_inc_value = (int64_t*)field_pointer(record,f);
+        if(*auto_inc_value != 0){
+          buffer_append(fieldsToInsert, f->name->data);
+          buffer_append(valuePlaceholders, "?");
+          bind_one(statementHandle, i+1, model->fields.data[i], field_pointer(record, f));
+          if(i < model->field_count-1) {
+            buffer_append(fieldsToInsert, ",");
+            buffer_append(valuePlaceholders, ",");
+          }
+        }
+      }
+    } else {
+      buffer_append(fieldsToInsert, f->name->data);
+      buffer_append(valuePlaceholders, "?");
+      bind_one(statementHandle, i+1, model->fields.data[i], field_pointer(record, f));
+      if (i < model->field_count-1){
+        buffer_append(fieldsToInsert, ",");
+        buffer_append(valuePlaceholders, ",");
+      }
+    }
+  }
+
+  buffer_appendf(sqlQueryBuffer, "INSERT INTO %s (%s) VALUES (%s);", model->table->data, fieldsToInsert->data, valuePlaceholders->data);
+  //for (int i = 0; i < model->field_count; i++) {
+  //  buffer_appendf(sqlQueryBuffer, "%s?", i ? "," : "");
+  //}
+  //buffer_append(sqlQueryBuffer, ");");
+  printf("SQL: %s\n", sqlQueryBuffer->data);
+
+//  sqlite3_stmt *statementHandle = NULL;
   int insertResultCode = sqlite3_prepare_v2(
       databaseHandle, sqlQueryBuffer->data, -1, &statementHandle, NULL);
   if (insertResultCode != SQLITE_OK) {
     return (LITEORM_Err){insertResultCode, sqlite3_errmsg(databaseHandle)};
   }
 
+/*
   for (int i = 0; i < model->field_count; i++) {
     // TODO Add error handling/warning
     bind_one(statementHandle, i + 1, model->fields.data[i],
              field_pointer(record, model->fields.data[i]));
   }
+*/
 
   insertResultCode = sqlite3_step(statementHandle);
 
